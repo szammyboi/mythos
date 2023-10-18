@@ -1,0 +1,57 @@
+{
+	"version": "2.0.0",
+	"tasks": [
+		{
+			"label": "Generate build files (Ninja)",
+			"group": "none",
+			"type": "shell",
+			"command": "premake5 ninja"
+		},
+		{
+			"dependsOn": [
+				"Generate build files (Ninja)"
+			],
+
+			
+			"label": "Build (Ninja)",
+			"type": "shell",
+			"group": "build",
+			"command": "ninja",
+			"args": [
+				"${input:buildConfigNinja}"
+			],
+			"options": {
+				"cwd": "${workspaceFolder}"
+			},
+			"problemMatcher": [
+				{
+					"base": "$gcc",
+					"fileLocation": ["relative", "${workspaceRoot}/build/whatever"]
+				}
+			]
+		},
+		{
+			"dependsOn": [
+				"Build (Ninja)"
+			],
+
+			"label": "Run application (Ninja)",
+			"group": "build",
+			"type": "shell",
+			"options": {
+				"cwd": "${workspaceFolder}/build/bin/${input:buildConfigNinja}"
+			},
+			"command": ".\\Mythos.exe"
+		},
+	],
+	"inputs": [
+        {
+            "id": "buildConfigNinja",
+            "description": "Select build config for Ninja:",
+            "default": "release",
+            "type": "pickString",
+            "options": ["release", "debug"]
+        },
+
+	]
+}

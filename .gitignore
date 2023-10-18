@@ -30,3 +30,11 @@
 *.exe
 *.out
 *.app
+
+# Build system files
+*.ninja
+.ninja_deps
+.ninja_log
+
+# Build files
+build
