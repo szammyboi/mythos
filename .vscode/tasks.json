@@ -39,9 +39,9 @@
 			"group": "build",
 			"type": "shell",
 			"options": {
-				"cwd": "${workspaceFolder}/build/bin/${input:buildConfigNinja}"
+				"cwd": "${workspaceFolder}"
 			},
-			"command": ".\\Mythos.exe"
+			"command": ".\\build\\bin\\${input:buildConfigNinja}\\Mythos.exe"
 		},
 	],
 	"inputs": [

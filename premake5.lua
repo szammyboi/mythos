@@ -50,5 +50,11 @@ project "Mythos"
         "gdi32"
     }
 
+    postbuildcommands {
+        --"glslc.exe src/shaders/shader.vert -o src/shaders/vert.spv",
+        --"glslc.exe src/shaders/shader.frag -o src/shaders/frag.spv",
+        -- "pause"
+    }
+
     filter "configurations:debug"
         defines "DEBUG"
