@@ -38,3 +38,6 @@
 
 # Build files
 build
+
+# VS Code Files
+.vscode
