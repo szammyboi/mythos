@@ -25,6 +25,7 @@ void HelloTriangleApplication::InitWindow()
 
 void HelloTriangleApplication::InitVulkan()
 {
+    // Basic Setup
     CreateInstance();
     SetupDebugMessenger();
     CreateSurface();
@@ -40,24 +41,28 @@ void HelloTriangleApplication::InitVulkan()
 
     // Render
     CreateCommandPool();
-    CreateCommandBuffer();
+    CreateCommandBuffers();
     CreateSyncObjects();
 }
 
 void HelloTriangleApplication::MainLoop()
 {
     while (!glfwWindowShouldClose(m_Window)) {
-            glfwPollEvents();
-            DrawFrame();
-        }
+        glfwPollEvents();
+        DrawFrame();
+    }
 
     vkDeviceWaitIdle(m_VulkanDevice);
 }
 void HelloTriangleApplication::Cleanup()
 {
-    vkDestroySemaphore(m_VulkanDevice, m_ImageAvailableSemaphore, nullptr);
-    vkDestroySemaphore(m_VulkanDevice, m_RenderFinishedSemaphore, nullptr);
-    vkDestroyFence(m_VulkanDevice, m_InFlightFence, nullptr);
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
+    {
+        vkDestroySemaphore(m_VulkanDevice, m_ImageAvailableSemaphores[i], nullptr);
+        vkDestroySemaphore(m_VulkanDevice, m_RenderFinishedSemaphores[i], nullptr);
+        vkDestroyFence(m_VulkanDevice, m_InFlightFences[i], nullptr);
+    }
+    
     vkDestroyCommandPool(m_VulkanDevice, m_CommandPool, nullptr);
     for (auto framebuffer : m_SwapChainFramebuffers) {
         vkDestroyFramebuffer(m_VulkanDevice, framebuffer, nullptr);
