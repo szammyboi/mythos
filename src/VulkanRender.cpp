@@ -2,6 +2,12 @@
 
 #include <stdexcept>
 
+const std::vector<Vertex> VERTICES = {
+    {{0.0f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, 0.5f}, {1.0f, 0.0f, 0.44f}},
+    {{-0.5f, 0.5f}, {0.0f, 0.65f, 1.0f}}
+};
+
 void HelloTriangleApplication::CreateCommandPool()
 {
     QueueFamilyIndices queueFamilyIndices = FindQueueFamilies(m_PhysicalDevice);
@@ -13,6 +19,53 @@ void HelloTriangleApplication::CreateCommandPool()
 
     if (vkCreateCommandPool(m_VulkanDevice, &poolInfo, nullptr, &m_CommandPool) != VK_SUCCESS)
         throw std::runtime_error("failed to create command pool!");
+}
+
+void HelloTriangleApplication::CreateVertexBuffer()
+{
+    VkBufferCreateInfo bufferInfo{};
+
+    bufferInfo.sType = VK_STRUCTURE_TYPE_BUFFER_CREATE_INFO;
+    bufferInfo.size = sizeof(VERTICES[0]) * VERTICES.size();
+    bufferInfo.usage = VK_BUFFER_USAGE_VERTEX_BUFFER_BIT;
+    bufferInfo.sharingMode = VK_SHARING_MODE_EXCLUSIVE;
+
+    VkResult result = vkCreateBuffer(m_VulkanDevice, &bufferInfo, nullptr, &m_VertexBuffer);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("failed to create vertex buffer!");
+
+    VkMemoryRequirements memRequirements;
+    vkGetBufferMemoryRequirements(m_VulkanDevice, m_VertexBuffer, &memRequirements);
+
+    VkMemoryAllocateInfo allocInfo{};
+    allocInfo.sType = VK_STRUCTURE_TYPE_MEMORY_ALLOCATE_INFO;
+    allocInfo.allocationSize = memRequirements.size;
+    allocInfo.memoryTypeIndex = FindMemoryType(memRequirements.memoryTypeBits, VK_MEMORY_PROPERTY_HOST_VISIBLE_BIT | VK_MEMORY_PROPERTY_HOST_COHERENT_BIT);
+
+
+    result = vkAllocateMemory(m_VulkanDevice, &allocInfo, nullptr, &m_VertexBufferMemory);
+    if (result != VK_SUCCESS)
+        throw std::runtime_error("failed to allocate vertex buffer memory!");
+
+    vkBindBufferMemory(m_VulkanDevice, m_VertexBuffer, m_VertexBufferMemory, 0);
+
+    void* data;
+    vkMapMemory(m_VulkanDevice, m_VertexBufferMemory, 0, bufferInfo.size, 0, &data);
+    memcpy(data, VERTICES.data(), (size_t) bufferInfo.size);    
+    vkUnmapMemory(m_VulkanDevice, m_VertexBufferMemory);
+}
+
+uint32_t HelloTriangleApplication::FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties)
+{
+    VkPhysicalDeviceMemoryProperties memProperties;
+    vkGetPhysicalDeviceMemoryProperties(m_PhysicalDevice, &memProperties);
+    
+    for (uint32_t i = 0; i < memProperties.memoryTypeCount; i++) {
+        if ((typeFilter & (1 << i)) && (memProperties.memoryTypes[i].propertyFlags & properties) == properties) {
+            return i;
+        }
+    }
+    throw std::runtime_error("failed to find suitable memory type!");
 }
 
 void HelloTriangleApplication::CreateCommandBuffers()
@@ -69,7 +122,11 @@ void HelloTriangleApplication::RecordCommandBuffer(VkCommandBuffer commandBuffer
     scissor.extent = m_SwapChainExtent;
     vkCmdSetScissor(commandBuffer, 0, 1, &scissor);
 
-    vkCmdDraw(commandBuffer, 3, 1, 0, 0);
+    VkBuffer vertexBuffers[] = {m_VertexBuffer};
+    VkDeviceSize offsets[] = {0};
+    vkCmdBindVertexBuffers(commandBuffer, 0, 1, vertexBuffers, offsets);
+
+    vkCmdDraw(commandBuffer, static_cast<uint32_t>(VERTICES.size()), 1, 0, 0);
 
     vkCmdEndRenderPass(commandBuffer);
 
@@ -106,10 +163,19 @@ void HelloTriangleApplication::CreateSyncObjects()
 void HelloTriangleApplication::DrawFrame()
 {
     vkWaitForFences(m_VulkanDevice, 1, &m_InFlightFences[m_CurrentFrame], VK_TRUE, UINT64_MAX);
-    vkResetFences(m_VulkanDevice, 1, &m_InFlightFences[m_CurrentFrame]);
 
     uint32_t imageIndex;
-    vkAcquireNextImageKHR(m_VulkanDevice, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+    VkResult result = vkAcquireNextImageKHR(m_VulkanDevice, m_SwapChain, UINT64_MAX, m_ImageAvailableSemaphores[m_CurrentFrame], VK_NULL_HANDLE, &imageIndex);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR) {
+        RecreateSwapChain();
+        return;
+    } else if (result != VK_SUCCESS && result != VK_SUBOPTIMAL_KHR)
+    {
+        throw std::runtime_error("failed to acquire swap chain image!");
+    }
+
+    vkResetFences(m_VulkanDevice, 1, &m_InFlightFences[m_CurrentFrame]);
 
     vkResetCommandBuffer(m_CommandBuffers[m_CurrentFrame], 0);
     RecordCommandBuffer(m_CommandBuffers[m_CurrentFrame], imageIndex);
@@ -145,7 +211,14 @@ void HelloTriangleApplication::DrawFrame()
     presentInfo.pImageIndices = &imageIndex;
     presentInfo.pResults = nullptr; // Optional
 
-    vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+    result = vkQueuePresentKHR(m_PresentQueue, &presentInfo);
+
+    if (result == VK_ERROR_OUT_OF_DATE_KHR || result == VK_SUBOPTIMAL_KHR || m_FramebufferResized) {
+        RecreateSwapChain();
+        m_FramebufferResized = false;
+    }
+    else if (result != VK_SUCCESS)
+        throw std::runtime_error("failed to acquire swap chain image!");
 
     m_CurrentFrame = (m_CurrentFrame + 1) % MAX_FRAMES_IN_FLIGHT;
 }

@@ -18,9 +18,17 @@ void HelloTriangleApplication::InitWindow()
     glfwInit();
 
     glfwWindowHint(GLFW_CLIENT_API, GLFW_NO_API);
-    glfwWindowHint(GLFW_RESIZABLE, GLFW_FALSE);
+    glfwWindowHint(GLFW_RESIZABLE, GLFW_TRUE);
 
     m_Window = glfwCreateWindow(WIDTH, HEIGHT, "Vulkan", nullptr, nullptr);
+    glfwSetWindowUserPointer(m_Window, this);
+    glfwSetFramebufferSizeCallback(m_Window, FramebufferResizeCallback);
+}
+
+void HelloTriangleApplication::FramebufferResizeCallback(GLFWwindow* window, int width, int height)
+{
+    auto app = reinterpret_cast<HelloTriangleApplication*>(glfwGetWindowUserPointer(window));
+    app->m_FramebufferResized = true;
 }
 
 void HelloTriangleApplication::InitVulkan()
@@ -41,6 +49,7 @@ void HelloTriangleApplication::InitVulkan()
 
     // Render
     CreateCommandPool();
+    CreateVertexBuffer();
     CreateCommandBuffers();
     CreateSyncObjects();
 }
@@ -56,26 +65,23 @@ void HelloTriangleApplication::MainLoop()
 }
 void HelloTriangleApplication::Cleanup()
 {
-    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++)
-    {
-        vkDestroySemaphore(m_VulkanDevice, m_ImageAvailableSemaphores[i], nullptr);
-        vkDestroySemaphore(m_VulkanDevice, m_RenderFinishedSemaphores[i], nullptr);
-        vkDestroyFence(m_VulkanDevice, m_InFlightFences[i], nullptr);
-    }
-    
-    vkDestroyCommandPool(m_VulkanDevice, m_CommandPool, nullptr);
-    for (auto framebuffer : m_SwapChainFramebuffers) {
-        vkDestroyFramebuffer(m_VulkanDevice, framebuffer, nullptr);
-    }
+    CleanupSwapChain();
+    vkDestroyBuffer(m_VulkanDevice, m_VertexBuffer, nullptr);
+    vkFreeMemory(m_VulkanDevice, m_VertexBufferMemory, nullptr);
+
     vkDestroyPipeline(m_VulkanDevice, m_GraphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_VulkanDevice, m_PipelineLayout, nullptr);
+
     vkDestroyRenderPass(m_VulkanDevice, m_RenderPass, nullptr);
 
-    for (auto imageView : m_SwapChainImageViews) {
-        vkDestroyImageView(m_VulkanDevice, imageView, nullptr);
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroySemaphore(m_VulkanDevice, m_RenderFinishedSemaphores[i], nullptr);
+        vkDestroySemaphore(m_VulkanDevice, m_ImageAvailableSemaphores[i], nullptr);
+        vkDestroyFence(m_VulkanDevice, m_InFlightFences[i], nullptr);
     }
 
-    vkDestroySwapchainKHR(m_VulkanDevice, m_SwapChain, nullptr);
+    vkDestroyCommandPool(m_VulkanDevice, m_CommandPool, nullptr);
+
     vkDestroyDevice(m_VulkanDevice, nullptr);
 
     if (ENABLE_VALIDATION_LAYERS) {
@@ -84,6 +90,8 @@ void HelloTriangleApplication::Cleanup()
 
     vkDestroySurfaceKHR(m_Instance, m_Surface, nullptr);
     vkDestroyInstance(m_Instance, nullptr);
+
+    
 
     glfwDestroyWindow(m_Window);
 

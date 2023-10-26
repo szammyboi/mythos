@@ -13,6 +13,35 @@
 #include <optional>
 #include <set>
 
+void HelloTriangleApplication::RecreateSwapChain()
+{
+    int width = 0, height = 0;
+    glfwGetFramebufferSize(m_Window, &width, &height);
+    while (width == 0 || height == 0)
+    {
+        glfwGetFramebufferSize(m_Window, &width, &height);
+        glfwWaitEvents();
+    }
+    vkDeviceWaitIdle(m_VulkanDevice);
+
+    CreateSwapChain();
+    CreateImageViews();
+    CreateFrameBuffers();
+}
+
+void HelloTriangleApplication::CleanupSwapChain()
+{
+    for (size_t i = 0; i < m_SwapChainFramebuffers.size(); i++) {
+        vkDestroyFramebuffer(m_VulkanDevice, m_SwapChainFramebuffers[i], nullptr);
+    }
+
+    for (size_t i = 0; i < m_SwapChainImageViews.size(); i++) {
+        vkDestroyImageView(m_VulkanDevice, m_SwapChainImageViews[i], nullptr);
+    }
+
+    vkDestroySwapchainKHR(m_VulkanDevice, m_SwapChain, nullptr);
+}
+
 void HelloTriangleApplication::CreateSwapChain()
 {
     SwapChainSupportDetails swapChainSupport = QuerySwapChainSupport(m_PhysicalDevice);
@@ -203,10 +232,15 @@ void HelloTriangleApplication::CreateGraphicsPipeline()
 
     VkPipelineShaderStageCreateInfo shaderStages[] = {vertShaderStageInfo, fragShaderStageInfo};
 
+    auto bindingDescription = Vertex::GetBindingDescription();
+    auto attributeDescriptions = Vertex::GetAttributeDescriptions();
+
     VkPipelineVertexInputStateCreateInfo vertexInputInfo{};
     vertexInputInfo.sType = VK_STRUCTURE_TYPE_PIPELINE_VERTEX_INPUT_STATE_CREATE_INFO;
-    vertexInputInfo.vertexBindingDescriptionCount = 0;
-    vertexInputInfo.vertexAttributeDescriptionCount = 0;
+    vertexInputInfo.vertexBindingDescriptionCount = 1;
+    vertexInputInfo.vertexAttributeDescriptionCount = static_cast<uint32_t>(attributeDescriptions.size());
+    vertexInputInfo.pVertexBindingDescriptions = &bindingDescription;
+    vertexInputInfo.pVertexAttributeDescriptions = attributeDescriptions.data();
 
     VkPipelineInputAssemblyStateCreateInfo inputAssembly{};
     inputAssembly.sType = VK_STRUCTURE_TYPE_PIPELINE_INPUT_ASSEMBLY_STATE_CREATE_INFO;

@@ -6,6 +6,8 @@
 #include <vector>
 #include <string>
 #include <optional>
+#include <glm/glm.hpp>
+#include <array>
 
 #ifdef DEBUG
     #define ENABLE_VALIDATION_LAYERS true
@@ -55,6 +57,37 @@ struct SwapChainSupportDetails {
     std::vector<VkPresentModeKHR> presentModes;
 };
 
+struct Vertex {
+    glm::vec2 pos;
+    glm::vec3 color;
+
+    static inline VkVertexInputBindingDescription GetBindingDescription()
+    {
+        VkVertexInputBindingDescription bindingDescription{};
+        bindingDescription.binding = 0;
+        bindingDescription.stride = sizeof(Vertex);
+        bindingDescription.inputRate = VK_VERTEX_INPUT_RATE_VERTEX;
+
+        return bindingDescription;
+    }
+
+    static inline std::array<VkVertexInputAttributeDescription, 2> GetAttributeDescriptions() {
+        std::array<VkVertexInputAttributeDescription, 2> attributeDescriptions{};
+
+        attributeDescriptions[0].binding = 0;
+        attributeDescriptions[0].location = 0;
+        attributeDescriptions[0].format = VK_FORMAT_R32G32_SFLOAT;
+        attributeDescriptions[0].offset = offsetof(Vertex, pos);
+
+        attributeDescriptions[1].binding = 0;
+        attributeDescriptions[1].location = 1;
+        attributeDescriptions[1].format = VK_FORMAT_R32G32B32_SFLOAT;
+        attributeDescriptions[1].offset = offsetof(Vertex, color);
+
+        return attributeDescriptions;
+    }
+};
+
 
 class HelloTriangleApplication {
 public:
@@ -83,6 +116,8 @@ private:
     
     void CreateLogicalDevice();
     
+    void RecreateSwapChain();
+    void CleanupSwapChain();
     void CreateSwapChain(); 
     SwapChainSupportDetails QuerySwapChainSupport(VkPhysicalDevice device);
     VkPresentModeKHR ChooseSwapPresentMode(const std::vector<VkPresentModeKHR>& availablePresentModes);
@@ -100,6 +135,8 @@ private:
 
 
     void CreateCommandPool();
+    void CreateVertexBuffer();
+    uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     void CreateCommandBuffers();
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
 
@@ -111,7 +148,8 @@ private:
 
     //static std::vector<char> ReadFile(const std::string& filename);
     static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
-    
+    static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
+
 private:
     GLFWwindow* m_Window;
 
@@ -139,9 +177,13 @@ private:
     VkCommandPool m_CommandPool;
     std::vector<VkCommandBuffer> m_CommandBuffers;
 
+    VkBuffer m_VertexBuffer;
+    VkDeviceMemory m_VertexBufferMemory;
+
     std::vector<VkSemaphore> m_ImageAvailableSemaphores;
     std::vector<VkSemaphore> m_RenderFinishedSemaphores;
     std::vector<VkFence> m_InFlightFences;
 
     uint32_t m_CurrentFrame = 0;
+    bool m_FramebufferResized = false;
 };
