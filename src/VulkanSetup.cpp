@@ -50,6 +50,7 @@ void HelloTriangleApplication::InitVulkan()
     // Render
     CreateCommandPool();
     CreateVertexBuffer();
+    CreateIndexBuffer();
     CreateCommandBuffers();
     CreateSyncObjects();
 }
@@ -68,6 +69,8 @@ void HelloTriangleApplication::Cleanup()
     CleanupSwapChain();
     vkDestroyBuffer(m_VulkanDevice, m_VertexBuffer, nullptr);
     vkFreeMemory(m_VulkanDevice, m_VertexBufferMemory, nullptr);
+    vkDestroyBuffer(m_VulkanDevice, m_IndexBuffer, nullptr);
+    vkFreeMemory(m_VulkanDevice, m_IndexBufferMemory, nullptr);
 
     vkDestroyPipeline(m_VulkanDevice, m_GraphicsPipeline, nullptr);
     vkDestroyPipelineLayout(m_VulkanDevice, m_PipelineLayout, nullptr);

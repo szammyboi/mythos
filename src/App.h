@@ -9,6 +9,8 @@
 #include <glm/glm.hpp>
 #include <array>
 
+#define VSYNC_ENABLED true
+
 #ifdef DEBUG
     #define ENABLE_VALIDATION_LAYERS true
 #else
@@ -136,6 +138,9 @@ private:
 
     void CreateCommandPool();
     void CreateVertexBuffer();
+    void CreateIndexBuffer();
+    void CreateBuffer(VkDeviceSize size, VkBufferUsageFlags usage, VkMemoryPropertyFlags properties, VkBuffer& buffer, VkDeviceMemory& bufferMemory);
+    void CopyBuffer(VkBuffer srcBuffer, VkBuffer dstBuffer, VkDeviceSize size);
     uint32_t FindMemoryType(uint32_t typeFilter, VkMemoryPropertyFlags properties);
     void CreateCommandBuffers();
     void RecordCommandBuffer(VkCommandBuffer commandBuffer, uint32_t imageIndex);
@@ -179,6 +184,8 @@ private:
 
     VkBuffer m_VertexBuffer;
     VkDeviceMemory m_VertexBufferMemory;
+    VkBuffer m_IndexBuffer;
+    VkDeviceMemory m_IndexBufferMemory;
 
     std::vector<VkSemaphore> m_ImageAvailableSemaphores;
     std::vector<VkSemaphore> m_RenderFinishedSemaphores;
