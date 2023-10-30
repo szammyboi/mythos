@@ -90,6 +90,17 @@ struct Vertex {
     }
 };
 
+inline std::vector<Vertex> VERTICES = {
+    {{-0.5f, -0.5f}, {1.0f, 0.0f, 0.0f}},
+    {{0.5f, -0.5f}, {0.0f, 1.0f, 0.0f}},
+    {{0.5f, 0.5f}, {0.0f, 0.0f, 1.0f}},
+    {{-0.5f, 0.5f}, {1.0f, 1.0f, 1.0f}}
+};
+
+inline const std::vector<uint16_t> INDICES = {
+    0, 1, 2, 2, 3, 0
+};
+
 
 class HelloTriangleApplication {
 public:
@@ -154,7 +165,6 @@ private:
     //static std::vector<char> ReadFile(const std::string& filename);
     static VKAPI_ATTR VkBool32 VKAPI_CALL DebugCallback(VkDebugUtilsMessageSeverityFlagBitsEXT messageSeverity, VkDebugUtilsMessageTypeFlagsEXT messageType, const VkDebugUtilsMessengerCallbackDataEXT* pCallbackData, void* pUserData);
     static void FramebufferResizeCallback(GLFWwindow* window, int width, int height);
-
 private:
     GLFWwindow* m_Window;
 

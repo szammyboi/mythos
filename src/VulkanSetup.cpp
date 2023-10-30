@@ -13,6 +13,7 @@ void HelloTriangleApplication::Run()
     Cleanup();
 }
 
+
 void HelloTriangleApplication::InitWindow()
 {
     glfwInit();
