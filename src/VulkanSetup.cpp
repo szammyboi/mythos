@@ -45,6 +45,7 @@ void HelloTriangleApplication::InitVulkan()
     CreateSwapChain();
     CreateImageViews();
     CreateRenderPass();
+    CreateDescriptorSetLayout();
     CreateGraphicsPipeline();
     CreateFrameBuffers();
 
@@ -52,6 +53,9 @@ void HelloTriangleApplication::InitVulkan()
     CreateCommandPool();
     CreateVertexBuffer();
     CreateIndexBuffer();
+    CreateUniformBuffers();
+    CreateDescriptorPool();
+    CreateDescriptorSets();
     CreateCommandBuffers();
     CreateSyncObjects();
 }
@@ -68,6 +72,13 @@ void HelloTriangleApplication::MainLoop()
 void HelloTriangleApplication::Cleanup()
 {
     CleanupSwapChain();
+    for (size_t i = 0; i < MAX_FRAMES_IN_FLIGHT; i++) {
+        vkDestroyBuffer(m_VulkanDevice, m_UniformBuffers[i], nullptr);
+        vkFreeMemory(m_VulkanDevice, m_UniformBuffersMemory[i], nullptr);
+    }
+
+    vkDestroyDescriptorPool(m_VulkanDevice, m_DescriptorPool, nullptr);
+    vkDestroyDescriptorSetLayout(m_VulkanDevice, m_DescriptorSetLayout, nullptr);
     vkDestroyBuffer(m_VulkanDevice, m_VertexBuffer, nullptr);
     vkFreeMemory(m_VulkanDevice, m_VertexBufferMemory, nullptr);
     vkDestroyBuffer(m_VulkanDevice, m_IndexBuffer, nullptr);
